@@ -174,41 +174,26 @@ class LDAPConn(object):
 
             final_listing = {}
 
-            group_members = []
-
-            # Get info for each user in the group
-            for memberid in users[group_member_attribute]:
+	    # Get DN for each user in the group
+            for uid in users[group_member_attribute]:
 
                 if openldap_type == "groupofnames":
 
-                  filter = "(objectClass=*)"
-                  # memberid is user dn
-                  base = memberid
+                  uid = uid.split('=', 2 )
+                  uid = uid[1].split(',', 1 )
+                  uid = uid[0]
 
-                else:
-
-                  # memberid is user attribute, most likely uid
-                  filter = user_filter % memberid
-                  base = self.base
-
+                filter = user_filter % uid
                 attrlist = [uid_attribute]
 
                 # get the actual LDAP object for each group member
-                uid = self.conn.search_s(base=base,
+                user = self.conn.search_s(base=self.base,
                                           scope=ldap.SCOPE_SUBTREE,
                                           filterstr=filter,
                                           attrlist=attrlist)
 
-                for item in uid:
-                        group_members.append(item)
-
-                # Fill dictionary with usernames and corresponding DNs
-                for item in group_members:
-                  dn = item[0]
-                  username = item[1][uid_attribute]
-                  user = ''.join(username)
-
-                final_listing[user] = dn
+                for items in user:
+                    final_listing[uid] = items[0]
 
             return final_listing
 
